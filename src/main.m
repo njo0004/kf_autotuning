@@ -37,7 +37,9 @@ for i = 1:N
 
     for j = 1:length(T)
 
-        Xdot = A*X(:,j,i) + B*signal_amp*sin(j*dt*signal_freq) + Gamma*V*randn;
+        u(i,j) = signal_amp*sin(j*dt*signal_freq);
+
+        Xdot = A*X(:,j,i) + B*u(i,j) + Gamma*V*randn;
         X(:,j+1,i) = X(:,j,i) + Xdot*dt_sim;
 
         if(~mod(dt,dt_sim*j))
@@ -58,6 +60,7 @@ for i = 1:N
     xlabel('Time (s)')
     ylabel('Position (m)')
     title('1D Cart Postion')
+    grid on
 
     figure(2)
     plot(T,X(2,1:length(T),i))
@@ -65,6 +68,7 @@ for i = 1:N
     xlabel('Time (s)')
     ylabel('Velocity (m/s)')
     title('1D Cart Velocity')
+    grid on
 
     figure(3)
     plot(Y(i,:))
@@ -72,5 +76,26 @@ for i = 1:N
     xlabel("Measurement IDX")
     ylabel("1D Position Measurement (m)")
     title("Position Measurement")
+    grid on
+
+end
+
+
+%% Running Kalman Filters
+
+F = [1 dt;0 1];
+G = [0.5*dt^2;dt];
+Q = VanLoanDiscretization(V,B,A,dt);
+
+X_hat(:,1,:) = zeros(2,1,i);
+
+for i = 1:N
+
+
+
+
+
+
+
 
 end
