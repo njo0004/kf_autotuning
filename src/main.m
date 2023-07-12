@@ -28,7 +28,7 @@ signal_freq = 0.75;
 %% Truth Simulation 
 
 T = 0:dt_sim:20; % <- time steps of simulation
-N = 20;  % <- number of simulations
+N = 30;  % <- number of simulations
 meas_idx = 1;
 
 for i = 1:N
@@ -102,7 +102,7 @@ for i = 1:N
 
         P(:,:,j+1,i) = F*P(:,:,j,i)*F' + Q;
         
-        NEES(i,j) = delX(:,j,i)'*inv(P(:,:,j,i))*delX(:,j,i);
+        NEES(i,j) = delX(:,j,i)'/(P(:,:,j,i))*delX(:,j,i);
 
         S(:,:,j,i) = (H*P(:,:,j,i)*H' + R);
 
@@ -134,7 +134,7 @@ NEES_ave = (1/N).*sum(NEES,1);
 NIS_ave  = (1/N).*sum(NIS,1);
 
 figure(3)
-plot(NEES_ave)
+plot(NEES_ave,'linewidth',3)
 
 figure(4)
-plot(NIS_ave)
+plot(NIS_ave,'LineWidth',3)
