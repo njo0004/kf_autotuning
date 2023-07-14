@@ -9,6 +9,37 @@ addpath(genpath("helper_functions"));
     Weak in the NEES?: Auto-Tuning Kalman Filter Using Bayesian
     Optimization
 
+    Notes:
+    1) There are three optimization routines being done
+        a) Use a Gaussian Process to estimate the "optimal" q
+            q->vector of diagonal intensities for process covariance
+            this is done using the Matern Kernal to evaluate the GP
+                Matern Kernal requires three hyper parameters (THETA)
+                    sigma_0   -> "kernal amplitude"
+                    l         -> "kernal length-scale"
+                    sigma_2_n -> "additive observation noise"
+        b) Point estimation strategy based on maximum likelihood to
+        estimate hyper parameters (THETA)
+
+        c) Expected Improvement is method used to select next trial point
+        of Gaussian Process
+
+    2) Workflow seems to be:
+        a) select q_j => expected improvement(q_(j-1)) <- expected
+        improvement function is a(q_k)
+        
+        b) evaluate function using J_NEES/J_NIS
+
+        c) all y(q) to f(Q) and qj to Q, update THETA
+
+    3) Loop
+
+    To-Do:
+        1) Function to evaluate cost (J_NEES/J_NIS) [Done]
+        2) Function to evaluate Matern Kernal given THETA,x_j,x_i
+        3) Function to estimate hyper parameters for next iteration
+        4) Function to estimate the next test setting for q
+
 %}
 
 A = [0 1;0 0];
@@ -28,18 +59,18 @@ signal_freq = 0.75;
 %% Truth Simulation 
 
 T = 0:dt_sim:20; % <- time steps of simulation
-N = 30;  % <- number of simulations
+N = 50;  % <- number of simulations
 meas_idx = 1;
 
 for i = 1:N
 
-    X(:,1,i) = [0;0] + 0.1*randn(2,1); % <- generate IC for each simulation
+    X(:,1,i) = [0;0] + 1*eye(2)*randn(2,1); % <- generate IC for each simulation
 
     for j = 1:length(T)
 
         u(i,j) = signal_amp*sin(j*dt*signal_freq);
 
-        Xdot = A*X(:,j,i) + B*u(i,j) + Gamma*V*randn;
+        Xdot = A*X(:,j,i) + B*u(i,j) + Gamma*V*randn(2,1);
         X(:,j+1,i) = X(:,j,i) + Xdot*dt_sim;
 
         if(~mod(dt_sim*j,dt))
@@ -85,14 +116,15 @@ end
 
 F = [1 dt;0 1];
 G = [0.5*dt^2;dt];
-Q = VanLoanDiscretization(V,B,A,dt);
-R = W/dt;
+Q = VanLoanDiscretization(0.001*V,B,A,dt);
+% R = W/dt;
+R = 4.623;
 
 X_hat(:,1,:) = zeros(2,1,i);
 
 for i = 1:N
     
-    P(:,:,1,i) = 5*eye(2); % OOF
+    P(:,:,1,i) = 1*eye(2); % OOF
 
     for j = 1:20/dt
 
@@ -118,12 +150,18 @@ for i = 1:N
 
     end
     
-    figure(3)
+    if(any(NEES(i,:)<0))
+
+        disp('pause')
+
+    end
+
+    figure(4)
     plot(NEES(i,:))
     hold on
     title("NEES")
 
-    figure(4)
+    figure(5)
     plot(NIS(i,:))
     hold on
     title("NIS")
@@ -131,10 +169,15 @@ for i = 1:N
 end
 
 NEES_ave = (1/N).*sum(NEES,1);
+
+NEES_cost = calcCostFunc(NEES_ave,2);
+
 NIS_ave  = (1/N).*sum(NIS,1);
 
-figure(3)
-plot(NEES_ave,'linewidth',3)
+NIS_cost = calcCostFunc(NIS_ave,1);
 
 figure(4)
+plot(NEES_ave,'linewidth',3)
+
+figure(5)
 plot(NIS_ave,'LineWidth',3)
