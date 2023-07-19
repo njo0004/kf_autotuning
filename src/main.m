@@ -59,7 +59,7 @@ signal_freq = 0.75;
 %% Truth Simulation 
 
 T = 0:dt_sim:20; % <- time steps of simulation
-N = 50;  % <- number of simulations
+N = 10;  % <- number of simulations
 meas_idx = 1;
 
 for i = 1:N
@@ -70,7 +70,7 @@ for i = 1:N
 
         u(i,j) = signal_amp*sin(j*dt*signal_freq);
 
-        Xdot = A*X(:,j,i) + B*u(i,j) + Gamma*V*randn(2,1);
+        Xdot = A*X(:,j,i) + B*u(i,j) + Gamma*V*randn(1,1);
         X(:,j+1,i) = X(:,j,i) + Xdot*dt_sim;
 
         if(~mod(dt_sim*j,dt))
@@ -116,9 +116,9 @@ end
 
 F = [1 dt;0 1];
 G = [0.5*dt^2;dt];
-Q = VanLoanDiscretization(0.001*V,B,A,dt);
+Q = VanLoanDiscretization(V,B,A,dt);
 % R = W/dt;
-R = 4.623;
+R = 1.063;
 
 X_hat(:,1,:) = zeros(2,1,i);
 
